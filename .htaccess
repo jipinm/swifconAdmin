@@ -1,4 +1,8 @@
 RewriteEngine On
+
+ErrorDocument 404 /swifcon_cms/404.php
+ErrorDocument 500 /swifcon_cms/500.php
+
 RewriteBase /swifcon_cms/ # Adjust if your project is in a subdirectory
 
 # Allow direct access to existing files and directories

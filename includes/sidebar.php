@@ -21,8 +21,8 @@ $menu_items = [
     'projects_list.php' => ['icon' => 'bi-kanban-fill', 'title' => 'Projects'],
     'services_list.php' => ['icon' => 'bi-gear-wide-connected', 'title' => 'Services'],
     'hero_sliders.php' => ['icon' => 'bi-images', 'title' => 'Hero Sliders'],
-    'contact_settings.php' => ['icon' => 'bi-telephone-inbound-fill', 'title' => 'Contact Settings'],
-    'form_enquiries.php' => ['icon' => 'bi-envelope-paper-fill', 'title' => 'Enquiries'],
+    'contact_settings_edit.php' => ['icon' => 'bi-telephone-inbound-fill', 'title' => 'Contact Settings'],
+    'enquiries_list.php' => ['icon' => 'bi-envelope-paper-fill', 'title' => 'Enquiries'],
     'file_manager_page.php' => ['icon' => 'bi-folder-fill', 'title' => 'File Manager'], // Example link to a dedicated FM page
 ];
 

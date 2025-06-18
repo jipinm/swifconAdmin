@@ -1,7 +1,8 @@
 <?php if (is_logged_in()): ?>
             </main> <!-- End main content -->
-        </div> <!-- End row -->
-    </div> <!-- End container-fluid -->
+        </div> <!-- End main-content-wrapper --> <!-- Add this closing div -->
+    </div> <!-- End row -->
+</div> <!-- End container-fluid -->
 <?php else: // Not logged in (e.g. login page) ?>
     </div> <!-- End main-content-login -->
 <?php endif; ?>
