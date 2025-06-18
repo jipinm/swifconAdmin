@@ -1,6 +1,6 @@
 <?php if (is_logged_in()): ?>
             </main> <!-- End main content -->
-        </div> <!-- End main-content-wrapper --> <!-- Add this closing div -->
+            <!-- Removed the extra div closure here -->
     </div> <!-- End row -->
 </div> <!-- End container-fluid -->
 <?php else: // Not logged in (e.g. login page) ?>

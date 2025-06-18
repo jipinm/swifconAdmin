@@ -199,7 +199,15 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
                 }
             },
             error: function(xhr, status, error) {
-                gallery.html('<p class="text-center text-danger">Could not connect to server to load files.</p>');
+                console.error("File Manager AJAX Error:", {
+                    readyState: xhr.readyState,
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText, // This can be very helpful
+                    errorThrown: error,
+                    ajaxStatus: status
+                });
+                gallery.html('<p class="text-center text-danger">Error loading files. Check console for details. (Is `uploads/` directory writable and readable by the web server?)</p>');
             }
         });
     }
