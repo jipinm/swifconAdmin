@@ -76,3 +76,19 @@ body {
 @keyframes spinner-border {
     to { transform: rotate(360deg); }
 }
+
+#filePreviewImage {
+    max-height: 70vh;    /* Maximum 70% of the viewport height */
+    max-width: 100%;     /* Maximum 100% of its container's width (modal body) */
+    display: block;      /* Behaves as a block element */
+    margin-left: auto;   /* Centers the image horizontally if it's narrower than container */
+    margin-right: auto;  /* Centers the image horizontally */
+    object-fit: contain; /* Scales the image while maintaining aspect ratio, fitting within element's content box */
+    background-color: #f0f0f0; /* Optional: light background for letterboxing if image is transparent or smaller */
+}
+
+/* Reduce opacity of all Bootstrap modal backdrops globally */
+/* Default Bootstrap opacity is 0.5 */
+.modal-backdrop {
+    opacity: 0.25 !important; /* Adjust value as needed. !important may be required to override Bootstrap defaults. */
+}
