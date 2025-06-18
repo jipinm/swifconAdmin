@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /swifcon_cms/ # Adjust if your project is in a subdirectory
+
+# Redirect to admin login if accessing admin without specific file
+RewriteRule ^admin/?$ admin/index.php [L,NC]
+
+# Allow direct access to existing files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# You might add more complex routing rules here later if needed
+# For now, this is basic.
