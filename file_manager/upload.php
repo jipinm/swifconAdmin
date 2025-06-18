@@ -41,7 +41,7 @@ $target_dir = UPLOADS_PATH . "/"; // Defined in config.php
 $original_file_name = basename($file["name"]);
 $file_extension = strtolower(pathinfo($original_file_name, PATHINFO_EXTENSION));
 $sanitized_file_name_base = preg_replace("/[^a-zA-Z0-9_.-]/", "_", pathinfo($original_file_name, PATHINFO_FILENAME));
-$unique_file_name = $sanitized_file_name_base . "_" . time() . "." . $file_extension;
+$unique_file_name = $sanitized_file_name_base . "_" . time() . "_" . uniqid() . "." . $file_extension;
 $target_file = $target_dir . $unique_file_name;
 
 // Check if uploads directory exists, if not create it

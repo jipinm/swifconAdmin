@@ -50,9 +50,14 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                     <div class="tab-content" id="fileManagerMainTabsContent">
                         <!-- Gallery Pane -->
                         <div class="tab-pane fade show active p-3" id="gallery-main-pane" role="tabpanel" aria-labelledby="gallery-main-tab">
+                                <div class="row mb-3">
+                                    <div class="col-md-6 offset-md-3"> <!-- Or adjust width/offset as preferred -->
+                                        <input type="search" id="fileSearchInput" class="form-control" placeholder="Search files by name...">
+                                    </div>
+                                </div>
                             <div class="row" id="fileManagerMainGallery">
-                                <p>Media library will be loaded here...</p>
-                                <!-- Files will be loaded here by JS -->
+                                    <p class="text-center"><span class="spinner-border spinner-border-sm"></span> Loading files...</p>
+                                    <!-- Initial message updated from "Media library will be loaded here..." for clarity -->
                             </div>
                             <div class="text-center mt-3">
                                 <button type="button" class="btn btn-secondary" id="loadMoreMainFiles" style="display:none;">Load More</button>
@@ -62,15 +67,18 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                         <div class="tab-pane fade p-3" id="upload-main-pane" role="tabpanel" aria-labelledby="upload-main-tab">
                             <form id="mainFileUploadForm" enctype="multipart/form-data">
                                 <div class="mb-3 col-md-6">
-                                    <label for="main_file_to_upload" class="form-label">Select file (Max 5MB: JPG, JPEG, PNG, GIF, PDF)</label>
-                                    <input class="form-control" type="file" id="main_file_to_upload" name="file_to_upload" required>
+                                    <label for="main_file_to_upload" class="form-label">Select file(s) (Max 5MB each: JPG, JPEG, PNG, GIF, PDF)</label>
+                                    <input class="form-control" type="file" id="main_file_to_upload" name="file_to_upload" required multiple>
                                 </div>
                                 <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-up-fill"></i> Start Upload</button>
+                                <!-- Note: The main progress bar #mainUploadProgressBar might be repurposed or removed if individual ones are sufficient -->
+                                <!-- For now, let's keep it as it might show overall batch progress or be hidden -->
                                 <div class="progress mt-3" style="height: 25px; display:none;">
                                     <div id="mainUploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
                                 </div>
                             </form>
-                            <div id="mainUploadStatusMessage" class="mt-3"></div>
+                            <div id="mainUploadStatusMessage" class="mt-3"></div> <!-- For overall messages if any -->
+                            <div id="multiUploadProgressArea" class="mt-3"></div> <!-- For individual file statuses -->
                         </div>
                     </div>
                 </div>
@@ -82,5 +90,40 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 <?php
 // The existing modal might be reused or parts of it. For now, include it to see if it conflicts or can be adapted.
 // include_once FILE_MANAGER_PATH . '/file_manager_modal.php';
+    ?>
+
+    <!-- Add this modal HTML to file_manager_page.php -->
+    <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filePreviewModalLabel">File Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3" id="filePreviewImageContainer">
+                        <img src="" id="filePreviewImage" class="img-fluid" alt="File Preview" style="max-height: 70vh; display: none;">
+                    </div>
+                    <div class="text-center mb-3" id="filePreviewIconContainer" style="display: none; font-size: 5rem;">
+                        <!-- Icon will be inserted here by JS -->
+                    </div>
+                    <p><strong>Filename:</strong> <span id="filePreviewName"></span></p>
+                    <div class="mb-3">
+                        <label for="filePreviewUrl" class="form-label">File URL:</label>
+                        <div class="input-group">
+                            <input type="text" id="filePreviewUrl" class="form-control" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copyFilePreviewUrl"><i class="bi bi-clipboard-check"></i> Copy</button>
+                        </div>
+                    </div>
+                     <p class="small text-muted"><strong>Size:</strong> <span id="filePreviewSize"></span> | <strong>Modified:</strong> <span id="filePreviewModifiedDate"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php
 include_once INCLUDES_PATH . '/footer.php';
 ?>
