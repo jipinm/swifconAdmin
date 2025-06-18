@@ -99,7 +99,7 @@ if ($action === 'list_files') {
     $filename = basename(trim($_POST['filename']));
     $file_path = rtrim(UPLOADS_PATH, '/') . '/' . $filename;
 
-    if (empty($filename) || strpos($filename, '..') !== false || strpbrk($filename, "\/?%*:|"<>") !== FALSE) {
+    if (empty($filename) || strpos($filename, '..') !== false || strpbrk($filename, "\\\/?%*:|\"<>") !== FALSE) {
         $response['message'] = 'Invalid filename provided.';
     } elseif (file_exists($file_path) && is_file($file_path)) {
         if (!is_writable($file_path)) {
