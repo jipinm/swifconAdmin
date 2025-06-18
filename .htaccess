@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /swifcon_cms/ # Adjust if your project is in a subdirectory
+
+# Allow direct access to existing files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# If you need to ensure index.php is served for root requests,
+# and your server doesn't do it by default with DirectoryIndex,
+# you might add a rule like:
+# RewriteRule ^$ index.php [L]
+# For now, relying on server's default DirectoryIndex behavior.
