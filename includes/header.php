@@ -80,10 +80,10 @@ $admin_username = get_admin_username(); // from session.php
                             <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars($admin_username); ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person-fill-gear"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/change_username.php"><i class="bi bi-person-badge me-2"></i> Change Username</a></li>
+                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/change_password.php"><i class="bi bi-key-fill me-2"></i> Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                            <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/logout.php"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                         </ul>
                     </li>
                 </ul>
