@@ -20,6 +20,8 @@ $menu_items = [
     'industry_categories_list.php' => ['icon' => 'bi-tags-fill', 'title' => 'Industry Categories'],
     'projects_list.php' => ['icon' => 'bi-kanban-fill', 'title' => 'Projects'],
     'services_list.php' => ['icon' => 'bi-gear-wide-connected', 'title' => 'Services'],
+    'latest_updates_list.php' => ['icon' => 'bi-newspaper', 'title' => 'Latest Updates'],
+    'latest_news_list.php' => ['icon' => 'bi-journals', 'title' => 'Latest News'],
     'hero_sliders.php' => ['icon' => 'bi-images', 'title' => 'Hero Sliders'],
     'contact_settings_edit.php' => ['icon' => 'bi-telephone-inbound-fill', 'title' => 'Contact Settings'],
     'enquiries_list.php' => ['icon' => 'bi-envelope-paper-fill', 'title' => 'Enquiries'],

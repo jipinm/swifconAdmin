@@ -184,7 +184,7 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
                 }
                 itemHtml += '<div class="card-body p-2"><p class="card-text small text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</p></div>';
                 itemHtml += '<div class="card-footer p-1 text-center">';
-                itemHtml += '<button class="btn btn-sm btn-danger delete-file-btn" data-filename="' + escapeHtml(file.name) + '" title="Delete"><i class="bi bi-trash3-fill"></i></button>';
+                itemHtml += '<button class="btn btn-sm btn-danger delete-file-btn" data-filename="' + file.name + '" title="Delete (' + escapeHtml(file.name) + ')"><i class="bi bi-trash3-fill"></i></button>';
                 itemHtml += '<button class="btn btn-sm btn-primary select-file-main-btn ms-1" title="Select for Form"><i class="bi bi-check-circle-fill"></i></button>';
                 itemHtml += '</div></div></div>';
                 gallery.append(itemHtml);
@@ -267,9 +267,147 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
     const targetInputIdForSelect = urlParamsForSelect.get('target_input');
     const targetPreviewIdForSelect = urlParamsForSelect.get('target_preview');
 
-    $('body').on('click', '.select-file-main-btn', function() { /* ... existing select ... */ });
+    $('body').on('click', '.select-file-main-btn', function() {
+        alert('DEBUG: Select button (.select-file-main-btn) clicked!'); // Immediate visual feedback
+        console.log('DEBUG: .select-file-main-btn clicked'); // Console feedback
 
-    $('#fileManagerMainGallery').on('click', '.file-card-item', function(e) { /* ... existing preview modal ... */ });
+        const fileItem = $(this).closest('.file-item');
+        if (!fileItem.length) {
+            console.error('DEBUG: .select-file-main-btn - Could not find parent .file-item');
+            alert('DEBUG: Error finding file item. Check console.');
+            return;
+        }
+
+        const fileUrl = fileItem.data('url');
+        const fileName = fileItem.data('name'); // Ensure this is consistently set (escaped or raw)
+
+        console.log("Select button clicked. File URL:", fileUrl, "Filename:", fileName);
+        console.log("Selection Mode Active:", isSelectionModeForSelect);
+        console.log("Target Input ID:", targetInputIdForSelect);
+        console.log("Target Preview ID:", targetPreviewIdForSelect);
+        console.log("window.opener:", window.opener);
+
+        if (isSelectionModeForSelect && targetInputIdForSelect) {
+            if (window.opener && !window.opener.closed) {
+                console.log("Opener window found.");
+                if (typeof window.opener.handleFileSelectionFromManager === 'function') {
+                    console.log("Callback function 'handleFileSelectionFromManager' found on opener. Calling it.");
+                    try {
+                        // Pass the raw filename if handleFileSelectionFromManager handles escaping,
+                        // or ensure fileName is what the parent expects.
+                        window.opener.handleFileSelectionFromManager(targetInputIdForSelect, fileUrl, targetPreviewIdForSelect, fileName);
+                        window.close();
+                    } catch (e) {
+                        console.error("Error calling handleFileSelectionFromManager on opener:", e);
+                        alert("Error communicating with the parent window. See console for details.");
+                    }
+                } else {
+                    console.error("Callback function 'handleFileSelectionFromManager' NOT FOUND on opener window.", window.opener);
+                    alert('Error: Parent window callback function not found. Ensure the main page script is loaded correctly.');
+                }
+            } else {
+                console.error("Opener window is not available or has been closed.");
+                alert('Error: Could not connect to the parent window that opened the file manager. It might have been closed or navigated away.');
+            }
+        } else if (!isSelectionModeForSelect) {
+            console.log("Not in selection mode. Attempting to copy URL to clipboard.");
+            // ... (copy to clipboard logic) ...
+            navigator.clipboard.writeText(fileUrl).then(function() {
+                alert('File URL copied to clipboard: ' + fileUrl);
+            }, function(err) {
+                alert('Could not copy URL. Manual copy: ' + fileUrl);
+            });
+        } else {
+            console.warn("In selection mode, but targetInputId is missing. Cannot select file for form.");
+            alert('Selection mode active, but no target input field specified.');
+        }
+    });
+
+    $('#fileManagerMainGallery').on('click', '.file-card-item', function(e) {
+        alert('DEBUG: File card (.file-card-item) clicked for preview!'); // Immediate visual feedback
+        console.log('DEBUG: .file-card-item clicked for preview'); // Console feedback
+
+        // Prevent if the click was on a button within the card footer
+        if ($(e.target).closest('.card-footer').length > 0) {
+            console.log('DEBUG: Click was on card footer button, ignoring for preview.');
+            return;
+        }
+        // Also check if the click was on the select button itself, even if not in footer (though it is)
+        if ($(e.target).hasClass('select-file-main-btn') || $(e.target).closest('.select-file-main-btn').length > 0) {
+            console.log('DEBUG: Click was on select-file-main-btn, ignoring for preview.');
+            return;
+        }
+
+
+        const fileItem = $(this).closest('.file-item'); // .file-item is the parent div with all data attributes
+        if (!fileItem.length) {
+            console.error('DEBUG: Preview - Could not find parent .file-item for card:', this);
+            alert('DEBUG: Error finding file item for preview. Check console.');
+            return;
+        }
+
+        const fileName = fileItem.data('name');
+        const fileUrl = fileItem.data('url');
+        const fileType = (fileItem.data('type') || '').toString().toLowerCase(); // Ensure type is a string
+        const fileSize = fileItem.data('size');
+        const fileModifiedTimestamp = fileItem.data('modified');
+
+        console.log('DEBUG: Preview Data:', { fileName, fileUrl, fileType, fileSize, fileModifiedTimestamp });
+
+        // Target modal elements
+        const $modal = $('#filePreviewModal');
+        const $modalLabel = $('#filePreviewModalLabel');
+        const $previewName = $('#filePreviewName');
+        const $previewUrlInput = $('#filePreviewUrl');
+        const $previewImage = $('#filePreviewImage');
+        const $previewImageContainer = $('#filePreviewImageContainer');
+        const $previewIconContainer = $('#filePreviewIconContainer');
+        const $previewSize = $('#filePreviewSize');
+        const $previewModifiedDate = $('#filePreviewModifiedDate');
+
+        if(!$modal.length || !$modalLabel.length || !$previewName.length || !$previewUrlInput.length || !$previewImage.length || !$previewImageContainer.length || !$previewIconContainer.length || !$previewSize.length || !$previewModifiedDate.length) {
+            console.error('DEBUG: One or more modal elements for preview are missing from the DOM.');
+            alert('DEBUG: Error - preview modal elements missing. Check console.');
+            return;
+        }
+
+        $modalLabel.text('Preview: ' + escapeHtml(fileName || 'File')); // Use escapeHtml
+        $previewName.text(fileName || 'N/A');
+        $previewUrlInput.val(fileUrl || '');
+
+        // Format file size (same logic as before)
+        let formattedSize = 'N/A';
+        if (fileSize !== undefined) { /* ... (existing formatting logic) ... */
+            if (fileSize < 1024) { formattedSize = fileSize + ' Bytes'; }
+            else if (fileSize < (1024*1024)) { formattedSize = (fileSize/1024).toFixed(2) + ' KB'; }
+            else { formattedSize = (fileSize/(1024*1024)).toFixed(2) + ' MB'; }
+        }
+        $previewSize.text(formattedSize);
+
+        // Format modified date (same logic as before)
+        let formattedDate = 'N/A';
+        if (fileModifiedTimestamp) { /* ... (existing formatting logic) ... */
+            const date = new Date(fileModifiedTimestamp * 1000);
+            formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+        $previewModifiedDate.text(formattedDate);
+
+        if (['jpg', 'jpeg', 'png', 'gif'].includes(fileType)) {
+            $previewImage.attr('src', fileUrl).show();
+            $previewImageContainer.show();
+            $previewIconContainer.hide().html('');
+        } else {
+            $previewImage.hide().attr('src', '');
+            $previewImageContainer.hide();
+            let iconClass = 'bi-file-earmark-text-fill text-secondary';
+            if (fileType === 'pdf') {
+                iconClass = 'bi-file-earmark-pdf-fill text-danger';
+            }
+            $previewIconContainer.html('<i class="bi ' + iconClass + '"></i>').show();
+        }
+
+        $modal.modal('show');
+    });
     $('#copyFilePreviewUrl').on('click', function() { /* ... existing copy ... */ });
     $('#filePreviewModal').on('hidden.bs.modal', function () { /* ... existing reset ... */ });
 
