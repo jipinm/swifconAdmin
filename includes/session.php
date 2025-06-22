@@ -13,7 +13,7 @@ function require_login() {
     if (!is_logged_in()) {
         // Store the intended location and redirect to login
         // $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI']; // Optional: redirect back after login
-        header('Location: ' . ADMIN_URL . '/login_form.php');
+        header('Location: ' . SITE_URL . '/login_form.php');
         exit;
     }
 }

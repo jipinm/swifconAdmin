@@ -92,3 +92,22 @@ body {
 .modal-backdrop {
     opacity: 0.25 !important; /* Adjust value as needed. !important may be required to override Bootstrap defaults. */
 }
+
+#filePreviewModal .modal-body {
+    overflow-y: auto; /* Allow vertical scroll within the modal body if content is too tall */
+    /* Calculate max-height to leave space for modal header and footer */
+    /* Typical Bootstrap modal header height ~56px, footer ~60-70px. Add some margin/padding. */
+    /* So, roughly 120-150px total for header+footer+margins. */
+    /* Let's try calc(90vh - 150px) to allow modal to be quite tall but still leave space. */
+    /* Or, more simply, if the image is already constrained to 70vh, */
+    /* the modal body just needs to accommodate that plus other text. */
+    /* Let's set a max-height for modal-body that works with the 70vh image + text. */
+    /* If image is 70vh, other text might be ~10-15vh. So modal-body max-height ~85vh could work. */
+    max-height: 80vh; /* Simpler: Allow modal body to be up to 80% of viewport height, then scroll. */
+                      /* This should contain a 70vh image + some text. */
+}
+
+/* Ensure file preview modal in popup is above its own backdrop */
+#filePreviewModal {
+    z-index: 1070 !important; /* Bootstrap's .modal is ~1055, backdrop ~1050. This ensures it's on top. */
+}

@@ -260,7 +260,58 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
         });
     });
 
-    $('body').on('click', '.delete-file-btn', function() { /* ... existing delete ... */ }); // Placeholder, actual code is longer
+    $('body').on('click', '.delete-file-btn', function() {
+        alert('DEBUG: Delete button (.delete-file-btn) clicked!'); // Immediate visual feedback
+        console.log('DEBUG: .delete-file-btn clicked'); // Console feedback
+
+        const filename = $(this).data('filename');
+        console.log('DEBUG: Filename to delete:', filename);
+
+        if (!filename) {
+            alert('DEBUG: Error - No filename found for deletion. Check data-filename attribute.');
+            console.error('DEBUG: No filename found for deletion on button:', this);
+            return;
+        }
+
+        if (confirm('Are you sure you want to delete the file: ' + escapeHtml(filename) + '? This action cannot be undone.')) {
+            console.log('DEBUG: Deletion confirmed for:', filename);
+            $.ajax({
+                url: 'file_manager_actions.php', // This URL should be correct
+                type: 'POST',
+                data: {
+                    action: 'delete_file',
+                    filename: filename
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    console.log('DEBUG: Sending delete request for:', filename);
+                },
+                success: function(response) {
+                    console.log('DEBUG: Delete response received:', response);
+                    if (response.status === 'success') {
+                        alert(response.message); // Or use a less intrusive notification
+                        loadFileManagerFiles(); // Refresh gallery
+                    } else {
+                        alert('Error deleting file: ' + (response.message || 'Unknown server error.'));
+                        console.error('DEBUG: Error response from server:', response);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Could not connect to the server to delete the file. Check console for details.');
+                    console.error("DEBUG: Delete AJAX Error:", {
+                        readyState: xhr.readyState,
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        errorThrown: error,
+                        ajaxStatus: status
+                    });
+                }
+            });
+        } else {
+            console.log('DEBUG: Deletion cancelled for:', filename);
+        }
+    });
 
     const urlParamsForSelect = new URLSearchParams(window.location.search);
     const isSelectionModeForSelect = urlParamsForSelect.get('selection_mode') === 'true';
@@ -312,11 +363,17 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
         } else if (!isSelectionModeForSelect) {
             console.log("Not in selection mode. Attempting to copy URL to clipboard.");
             // ... (copy to clipboard logic) ...
-            navigator.clipboard.writeText(fileUrl).then(function() {
-                alert('File URL copied to clipboard: ' + fileUrl);
-            }, function(err) {
-                alert('Could not copy URL. Manual copy: ' + fileUrl);
-            });
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(fileUrl).then(function() {
+                    alert('File URL copied to clipboard (API): ' + fileUrl);
+                }, function(err) {
+                    console.error('Clipboard API writeText error in .select-file-main-btn:', err);
+                    tryCopyExecCommand(fileUrl, ".select-file-main-btn");
+                });
+            } else {
+                console.log("Using execCommand fallback for copy in .select-file-main-btn.");
+                tryCopyExecCommand(fileUrl, ".select-file-main-btn");
+            }
         } else {
             console.warn("In selection mode, but targetInputId is missing. Cannot select file for form.");
             alert('Selection mode active, but no target input field specified.');
@@ -408,9 +465,71 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
 
         $modal.modal('show');
     });
-    $('#copyFilePreviewUrl').on('click', function() { /* ... existing copy ... */ });
-    $('#filePreviewModal').on('hidden.bs.modal', function () { /* ... existing reset ... */ });
 
+    function tryCopyExecCommand(textToCopy, contextId) {
+        console.log("Attempting execCommand copy for context:", contextId, "Text:", textToCopy);
+        // Create a temporary textarea element
+        var tempTextArea = document.createElement("textarea");
+        tempTextArea.style.position = "fixed"; // Prevent scrolling to bottom of page
+        tempTextArea.style.top = "0";
+        tempTextArea.style.left = "0";
+        tempTextArea.style.width = "2em"; // Ensure it's not too big
+        tempTextArea.style.height = "2em";
+        tempTextArea.style.padding = "0";
+        tempTextArea.style.border = "none";
+        tempTextArea.style.outline = "none";
+        tempTextArea.style.boxShadow = "none";
+        tempTextArea.style.background = "transparent";
+        tempTextArea.value = textToCopy;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.focus();
+        tempTextArea.select();
+
+        try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'File URL copied to clipboard (Fallback).' : 'Fallback copy command failed.';
+            alert(msg + '\nURL: ' + textToCopy); // Corrected newline
+            if(contextId === "#copyFilePreviewUrl" && successful){ // Specific feedback for modal button
+                 $('#copyFilePreviewUrl').html('<i class="bi bi-clipboard-check-fill"></i> Copied!').removeClass('btn-outline-secondary').addClass('btn-success');
+                 setTimeout(() => {
+                     $('#copyFilePreviewUrl').html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
+                 }, 2000);
+            }
+        } catch (err) {
+            console.error('Fallback execCommand copy error for context ' + contextId + ':', err);
+            alert('Failed to copy URL using fallback. Please copy manually: ' + textToCopy);
+        }
+        document.body.removeChild(tempTextArea);
+    }
+
+    $('#copyFilePreviewUrl').off('click').on('click', function() {
+        const urlInput = document.getElementById('filePreviewUrl');
+        const textToCopy = urlInput.value;
+        console.log("Copy button in modal clicked for URL:", textToCopy);
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                $(this).html('<i class="bi bi-clipboard-check-fill"></i> Copied!').removeClass('btn-outline-secondary').addClass('btn-success');
+                setTimeout(() => {
+                    $(this).html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
+                }, 2000);
+            }, (err) => {
+                console.error('Clipboard API writeText error for #copyFilePreviewUrl:', err);
+                tryCopyExecCommand(textToCopy, "#copyFilePreviewUrl");
+            });
+        } else {
+            console.log("Using execCommand fallback for copy in #copyFilePreviewUrl.");
+            tryCopyExecCommand(textToCopy, "#copyFilePreviewUrl");
+        }
+    });
+
+    $('#filePreviewModal').on('hidden.bs.modal', function () {
+        $('#filePreviewImage').attr('src', '').hide();
+        $('#filePreviewIconContainer').hide().html('');
+        $('#filePreviewName').text('');
+        $('#filePreviewUrl').val('');
+        $('#filePreviewModalLabel').text('File Preview');
+    });
 } // End File Manager Page Specific JS
 
 // Note: escapeHtml was defined inside the FM specific block, it should be fine there or global.
