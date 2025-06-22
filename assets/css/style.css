@@ -58,7 +58,7 @@ body {
 .card-header .card-title i.bi-gear-wide-connected { color: #20c997; } /* Services */
 .card-header .card-title i.bi-telephone-inbound-fill { color: #ffc107; } /* Contact Settings */
 .card-header .card-title i.bi-envelope-paper-fill { color: #6610f2; } /* Enquiries */
-.card-header .card-title i.bi-folder-fill { color: #0d6efd; } /* File Manager */
+/* .card-header .card-title i.bi-folder-fill { color: #0d6efd; } */ /* File Manager V1 icon - removed for now */
 .card-header .card-title i.bi-images { color: #dc3545; } /* Hero Sliders */
 
 
@@ -77,37 +77,44 @@ body {
     to { transform: rotate(360deg); }
 }
 
-#filePreviewImage {
-    max-height: 70vh;    /* Maximum 70% of the viewport height */
-    max-width: 100%;     /* Maximum 100% of its container's width (modal body) */
-    display: block;      /* Behaves as a block element */
-    margin-left: auto;   /* Centers the image horizontally if it's narrower than container */
-    margin-right: auto;  /* Centers the image horizontally */
-    object-fit: contain; /* Scales the image while maintaining aspect ratio, fitting within element's content box */
-    background-color: #f0f0f0; /* Optional: light background for letterboxing if image is transparent or smaller */
-}
-
 /* Reduce opacity of all Bootstrap modal backdrops globally */
 /* Default Bootstrap opacity is 0.5 */
 .modal-backdrop {
     opacity: 0.25 !important; /* Adjust value as needed. !important may be required to override Bootstrap defaults. */
 }
 
-#filePreviewModal .modal-body {
-    overflow-y: auto; /* Allow vertical scroll within the modal body if content is too tall */
-    /* Calculate max-height to leave space for modal header and footer */
-    /* Typical Bootstrap modal header height ~56px, footer ~60-70px. Add some margin/padding. */
-    /* So, roughly 120-150px total for header+footer+margins. */
-    /* Let's try calc(90vh - 150px) to allow modal to be quite tall but still leave space. */
-    /* Or, more simply, if the image is already constrained to 70vh, */
-    /* the modal body just needs to accommodate that plus other text. */
-    /* Let's set a max-height for modal-body that works with the 70vh image + text. */
-    /* If image is 70vh, other text might be ~10-15vh. So modal-body max-height ~85vh could work. */
-    max-height: 80vh; /* Simpler: Allow modal body to be up to 80% of viewport height, then scroll. */
-                      /* This should contain a 70vh image + some text. */
+/* Styles for file_manager_full.php (V2) */
+#fmFullFilePreviewImage {
+    max-width: 100%;
+    max-height: 70vh;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    object-fit: contain;
+    background-color: #f8f9fa; /* Light background for letterboxing */
 }
 
-/* Ensure file preview modal in popup is above its own backdrop */
-#filePreviewModal {
-    z-index: 1070 !important; /* Bootstrap's .modal is ~1055, backdrop ~1050. This ensures it's on top. */
+#fmFullFilePreviewModal .modal-body {
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+/* Ensure V2 preview modal is on top if opened from another modal (though less likely with popup workflow) */
+#fmFullFilePreviewModal {
+    z-index: 1070 !important;
+}
+/* Ensure V2 delete confirm modal is on top */
+#fmFullDeleteConfirmModal {
+    z-index: 1075 !important; /* Higher than preview modal if one could open on top of other */
+}
+
+
+/* Specific styling for file cards in V2 File Manager */
+.fm-full-file-card .card-img-top,
+.fm-full-file-card .text-center > i.bi {
+    border-bottom: 1px solid #eee;
+}
+
+.fm-full-file-card .card-body {
+    overflow: hidden; /* Ensure text-truncate works well */
 }

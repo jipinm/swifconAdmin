@@ -25,7 +25,7 @@ $menu_items = [
     'hero_sliders.php' => ['icon' => 'bi-images', 'title' => 'Hero Sliders'],
     'contact_settings_edit.php' => ['icon' => 'bi-telephone-inbound-fill', 'title' => 'Contact Settings'],
     'enquiries_list.php' => ['icon' => 'bi-envelope-paper-fill', 'title' => 'Enquiries'],
-    'file_manager_page.php' => ['icon' => 'bi-folder-fill', 'title' => 'File Manager'], // Example link to a dedicated FM page
+    'file_manager_full.php' => ['icon' => 'bi-folder-fill', 'title' => 'File Manager'],
 ];
 
 // Determine parent page for active submenu item
