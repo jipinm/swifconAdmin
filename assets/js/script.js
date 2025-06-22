@@ -197,7 +197,10 @@ $(document).ready(function() {
 
         let fmFull_fileToDelete = '';
         const fmFull_deleteModalEl = document.getElementById('fmFullDeleteConfirmModal');
-        const fmFull_deleteModal = fmFull_deleteModalEl ? new bootstrap.Modal(fmFull_deleteModalEl) : null;
+        const fmFull_deleteModal = fmFull_deleteModalEl ? new bootstrap.Modal(fmFull_deleteModalEl, {
+            backdrop: false,
+            keyboard: true
+        }) : null;
 
         fmFull_gallery.on('click', '.fm-full-delete-btn', function(e) {
             e.stopPropagation();
@@ -221,7 +224,10 @@ $(document).ready(function() {
         }
 
         const fmFull_previewModalEl = document.getElementById('fmFullFilePreviewModal');
-        const fmFull_previewModal = fmFull_previewModalEl ? new bootstrap.Modal(fmFull_previewModalEl) : null;
+        const fmFull_previewModal = fmFull_previewModalEl ? new bootstrap.Modal(fmFull_previewModalEl, {
+            backdrop: false,
+            keyboard: true
+        }) : null;
 
         fmFull_gallery.on('click', '.fm-full-file-card', function(e) {
             if ($(e.target).closest('button').length > 0) return; // Click was on a button within card
