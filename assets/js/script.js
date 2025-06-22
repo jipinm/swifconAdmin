@@ -157,6 +157,12 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
 
     let allFileManagerFiles = [];
 
+    // Define these at the top of this specific scope for File Manager Page
+    const urlParamsForSelect = new URLSearchParams(window.location.search);
+    const isSelectionModeForSelect = urlParamsForSelect.get('selection_mode') === 'true';
+    const targetInputIdForSelect = urlParamsForSelect.get('target_input');
+    const targetPreviewIdForSelect = urlParamsForSelect.get('target_preview');
+
     function escapeHtml(unsafe) {
         return unsafe
              .replace(/&/g, "&amp;")
@@ -185,7 +191,12 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
                 itemHtml += '<div class="card-body p-2"><p class="card-text small text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</p></div>';
                 itemHtml += '<div class="card-footer p-1 text-center">';
                 itemHtml += '<button class="btn btn-sm btn-danger delete-file-btn" data-filename="' + file.name + '" title="Delete (' + escapeHtml(file.name) + ')"><i class="bi bi-trash3-fill"></i></button>';
-                itemHtml += '<button class="btn btn-sm btn-primary select-file-main-btn ms-1" title="Select for Form"><i class="bi bi-check-circle-fill"></i></button>';
+
+                // Conditionally add the "Select for Form" button
+                if (isSelectionModeForSelect) {
+                    itemHtml += '<button class="btn btn-sm btn-primary select-file-main-btn ms-1" title="Select for Form"><i class="bi bi-check-circle-fill"></i></button>';
+                }
+
                 itemHtml += '</div></div></div>';
                 gallery.append(itemHtml);
             });
@@ -260,67 +271,69 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
         });
     });
 
-    $('body').on('click', '.delete-file-btn', function() {
-        alert('DEBUG: Delete button (.delete-file-btn) clicked!'); // Immediate visual feedback
-        console.log('DEBUG: .delete-file-btn clicked'); // Console feedback
-
+    $('body').on('click', '.delete-file-btn', function(e) {
+        e.stopPropagation();
+        console.log('DEBUG: .delete-file-btn clicked');
         const filename = $(this).data('filename');
-        console.log('DEBUG: Filename to delete:', filename);
-
+        console.log('DEBUG: Filename to potentially delete:', filename);
         if (!filename) {
             alert('DEBUG: Error - No filename found for deletion. Check data-filename attribute.');
             console.error('DEBUG: No filename found for deletion on button:', this);
             return;
         }
-
-        if (confirm('Are you sure you want to delete the file: ' + escapeHtml(filename) + '? This action cannot be undone.')) {
-            console.log('DEBUG: Deletion confirmed for:', filename);
-            $.ajax({
-                url: 'file_manager_actions.php', // This URL should be correct
-                type: 'POST',
-                data: {
-                    action: 'delete_file',
-                    filename: filename
-                },
-                dataType: 'json',
-                beforeSend: function() {
-                    console.log('DEBUG: Sending delete request for:', filename);
-                },
-                success: function(response) {
-                    console.log('DEBUG: Delete response received:', response);
-                    if (response.status === 'success') {
-                        alert(response.message); // Or use a less intrusive notification
-                        loadFileManagerFiles(); // Refresh gallery
-                    } else {
-                        alert('Error deleting file: ' + (response.message || 'Unknown server error.'));
-                        console.error('DEBUG: Error response from server:', response);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert('Could not connect to the server to delete the file. Check console for details.');
-                    console.error("DEBUG: Delete AJAX Error:", {
-                        readyState: xhr.readyState,
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        responseText: xhr.responseText,
-                        errorThrown: error,
-                        ajaxStatus: status
-                    });
-                }
-            });
-        } else {
-            console.log('DEBUG: Deletion cancelled for:', filename);
-        }
+        $('#fileNameToDeletePlaceholder').text(filename);
+        $('#confirmDeleteFileBtn').data('filename-to-delete', filename);
+        var deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        deleteModal.show();
     });
 
-    const urlParamsForSelect = new URLSearchParams(window.location.search);
-    const isSelectionModeForSelect = urlParamsForSelect.get('selection_mode') === 'true';
-    const targetInputIdForSelect = urlParamsForSelect.get('target_input');
-    const targetPreviewIdForSelect = urlParamsForSelect.get('target_preview');
+    $('#confirmDeleteFileBtn').on('click', function() {
+        const filename = $(this).data('filename-to-delete');
+        console.log('DEBUG: Deletion confirmed in modal for:', filename);
+        if (!filename) {
+            alert('DEBUG: Error - Filename missing in confirmation step.');
+            console.error('DEBUG: Filename missing on #confirmDeleteFileBtn data.');
+            var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            if(deleteModal) deleteModal.hide();
+            return;
+        }
+        $.ajax({
+            url: 'file_manager_actions.php', type: 'POST', data: { action: 'delete_file', filename: filename }, dataType: 'json',
+            beforeSend: function() {
+                console.log('DEBUG: Sending delete request from modal for:', filename);
+                $('#confirmDeleteFileBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Deleting...');
+            },
+            success: function(response) {
+                console.log('DEBUG: Delete response received (from modal):', response);
+                var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                if(deleteModal) deleteModal.hide();
+                if (response.status === 'success') {
+                    alert(response.message || 'File deleted successfully.');
+                    loadFileManagerFiles();
+                } else {
+                    alert('Error deleting file: ' + (response.message || 'Unknown server error.'));
+                    console.error('DEBUG: Error response from server (delete modal):', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                if(deleteModal) deleteModal.hide();
+                alert('Could not connect to the server to delete the file. Check console for details.');
+                console.error("DEBUG: Delete AJAX Error (from modal):", {
+                    readyState: xhr.readyState, status: xhr.status, statusText: xhr.statusText,
+                    responseText: xhr.responseText, errorThrown: error, ajaxStatus: status
+                });
+            },
+            complete: function() {
+                $('#confirmDeleteFileBtn').prop('disabled', false).html('Yes, Delete');
+                $('#confirmDeleteFileBtn').removeData('filename-to-delete');
+            }
+        });
+    });
 
     $('body').on('click', '.select-file-main-btn', function() {
-        alert('DEBUG: Select button (.select-file-main-btn) clicked!'); // Immediate visual feedback
-        console.log('DEBUG: .select-file-main-btn clicked'); // Console feedback
+        alert('DEBUG: Select button (.select-file-main-btn) clicked!');
+        console.log('DEBUG: .select-file-main-btn clicked');
 
         const fileItem = $(this).closest('.file-item');
         if (!fileItem.length) {
@@ -328,9 +341,8 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
             alert('DEBUG: Error finding file item. Check console.');
             return;
         }
-
         const fileUrl = fileItem.data('url');
-        const fileName = fileItem.data('name'); // Ensure this is consistently set (escaped or raw)
+        const fileName = fileItem.data('name');
 
         console.log("Select button clicked. File URL:", fileUrl, "Filename:", fileName);
         console.log("Selection Mode Active:", isSelectionModeForSelect);
@@ -344,8 +356,6 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
                 if (typeof window.opener.handleFileSelectionFromManager === 'function') {
                     console.log("Callback function 'handleFileSelectionFromManager' found on opener. Calling it.");
                     try {
-                        // Pass the raw filename if handleFileSelectionFromManager handles escaping,
-                        // or ensure fileName is what the parent expects.
                         window.opener.handleFileSelectionFromManager(targetInputIdForSelect, fileUrl, targetPreviewIdForSelect, fileName);
                         window.close();
                     } catch (e) {
@@ -360,58 +370,42 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
                 console.error("Opener window is not available or has been closed.");
                 alert('Error: Could not connect to the parent window that opened the file manager. It might have been closed or navigated away.');
             }
-        } else if (!isSelectionModeForSelect) {
-            console.log("Not in selection mode. Attempting to copy URL to clipboard.");
-            // ... (copy to clipboard logic) ...
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(fileUrl).then(function() {
-                    alert('File URL copied to clipboard (API): ' + fileUrl);
-                }, function(err) {
-                    console.error('Clipboard API writeText error in .select-file-main-btn:', err);
-                    tryCopyExecCommand(fileUrl, ".select-file-main-btn");
-                });
-            } else {
-                console.log("Using execCommand fallback for copy in .select-file-main-btn.");
-                tryCopyExecCommand(fileUrl, ".select-file-main-btn");
-            }
-        } else {
-            console.warn("In selection mode, but targetInputId is missing. Cannot select file for form.");
-            alert('Selection mode active, but no target input field specified.');
+        } else if (isSelectionModeForSelect && !targetInputIdForSelect) {
+            console.warn("In selection mode, but targetInputId is missing from URL parameters. Cannot select file for form.");
+            alert('Selection mode active, but no target input field was specified when the file manager was opened.');
         }
+        // The copy-to-clipboard logic for !isSelectionModeForSelect was removed here as the button won't be rendered.
     });
 
     $('#fileManagerMainGallery').on('click', '.file-card-item', function(e) {
-        alert('DEBUG: File card (.file-card-item) clicked for preview!'); // Immediate visual feedback
-        console.log('DEBUG: .file-card-item clicked for preview'); // Console feedback
+        alert('DEBUG: File card (.file-card-item) clicked for preview!');
+        console.log('DEBUG: .file-card-item clicked for preview');
 
-        // Prevent if the click was on a button within the card footer
         if ($(e.target).closest('.card-footer').length > 0) {
             console.log('DEBUG: Click was on card footer button, ignoring for preview.');
             return;
         }
-        // Also check if the click was on the select button itself, even if not in footer (though it is)
         if ($(e.target).hasClass('select-file-main-btn') || $(e.target).closest('.select-file-main-btn').length > 0) {
             console.log('DEBUG: Click was on select-file-main-btn, ignoring for preview.');
             return;
         }
+        e.stopPropagation();
 
 
-        const fileItem = $(this).closest('.file-item'); // .file-item is the parent div with all data attributes
+        const fileItem = $(this).closest('.file-item');
         if (!fileItem.length) {
             console.error('DEBUG: Preview - Could not find parent .file-item for card:', this);
             alert('DEBUG: Error finding file item for preview. Check console.');
             return;
         }
-
         const fileName = fileItem.data('name');
         const fileUrl = fileItem.data('url');
-        const fileType = (fileItem.data('type') || '').toString().toLowerCase(); // Ensure type is a string
+        const fileType = (fileItem.data('type') || '').toString().toLowerCase();
         const fileSize = fileItem.data('size');
         const fileModifiedTimestamp = fileItem.data('modified');
 
         console.log('DEBUG: Preview Data:', { fileName, fileUrl, fileType, fileSize, fileModifiedTimestamp });
 
-        // Target modal elements
         const $modal = $('#filePreviewModal');
         const $modalLabel = $('#filePreviewModalLabel');
         const $previewName = $('#filePreviewName');
@@ -428,22 +422,20 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
             return;
         }
 
-        $modalLabel.text('Preview: ' + escapeHtml(fileName || 'File')); // Use escapeHtml
+        $modalLabel.text('Preview: ' + escapeHtml(fileName || 'File'));
         $previewName.text(fileName || 'N/A');
         $previewUrlInput.val(fileUrl || '');
 
-        // Format file size (same logic as before)
         let formattedSize = 'N/A';
-        if (fileSize !== undefined) { /* ... (existing formatting logic) ... */
+        if (fileSize !== undefined) {
             if (fileSize < 1024) { formattedSize = fileSize + ' Bytes'; }
             else if (fileSize < (1024*1024)) { formattedSize = (fileSize/1024).toFixed(2) + ' KB'; }
             else { formattedSize = (fileSize/(1024*1024)).toFixed(2) + ' MB'; }
         }
         $previewSize.text(formattedSize);
 
-        // Format modified date (same logic as before)
         let formattedDate = 'N/A';
-        if (fileModifiedTimestamp) { /* ... (existing formatting logic) ... */
+        if (fileModifiedTimestamp) {
             const date = new Date(fileModifiedTimestamp * 1000);
             formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         }
@@ -468,32 +460,22 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
 
     function tryCopyExecCommand(textToCopy, contextId) {
         console.log("Attempting execCommand copy for context:", contextId, "Text:", textToCopy);
-        // Create a temporary textarea element
         var tempTextArea = document.createElement("textarea");
-        tempTextArea.style.position = "fixed"; // Prevent scrolling to bottom of page
-        tempTextArea.style.top = "0";
-        tempTextArea.style.left = "0";
-        tempTextArea.style.width = "2em"; // Ensure it's not too big
-        tempTextArea.style.height = "2em";
-        tempTextArea.style.padding = "0";
-        tempTextArea.style.border = "none";
-        tempTextArea.style.outline = "none";
-        tempTextArea.style.boxShadow = "none";
+        tempTextArea.style.position = "fixed"; tempTextArea.style.top = "0"; tempTextArea.style.left = "0";
+        tempTextArea.style.width = "2em"; tempTextArea.style.height = "2em";
+        tempTextArea.style.padding = "0"; tempTextArea.style.border = "none";
+        tempTextArea.style.outline = "none"; tempTextArea.style.boxShadow = "none";
         tempTextArea.style.background = "transparent";
         tempTextArea.value = textToCopy;
         document.body.appendChild(tempTextArea);
-        tempTextArea.focus();
-        tempTextArea.select();
-
+        tempTextArea.focus(); tempTextArea.select();
         try {
             var successful = document.execCommand('copy');
             var msg = successful ? 'File URL copied to clipboard (Fallback).' : 'Fallback copy command failed.';
-            alert(msg + '\nURL: ' + textToCopy); // Corrected newline
-            if(contextId === "#copyFilePreviewUrl" && successful){ // Specific feedback for modal button
+            alert(msg + '\nURL: ' + textToCopy);
+            if(contextId === "#copyFilePreviewUrl" && successful){
                  $('#copyFilePreviewUrl').html('<i class="bi bi-clipboard-check-fill"></i> Copied!').removeClass('btn-outline-secondary').addClass('btn-success');
-                 setTimeout(() => {
-                     $('#copyFilePreviewUrl').html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
-                 }, 2000);
+                 setTimeout(() => { $('#copyFilePreviewUrl').html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary'); }, 2000);
             }
         } catch (err) {
             console.error('Fallback execCommand copy error for context ' + contextId + ':', err);
@@ -506,13 +488,10 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
         const urlInput = document.getElementById('filePreviewUrl');
         const textToCopy = urlInput.value;
         console.log("Copy button in modal clicked for URL:", textToCopy);
-
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(textToCopy).then(() => {
                 $(this).html('<i class="bi bi-clipboard-check-fill"></i> Copied!').removeClass('btn-outline-secondary').addClass('btn-success');
-                setTimeout(() => {
-                    $(this).html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
-                }, 2000);
+                setTimeout(() => { $(this).html('<i class="bi bi-clipboard-check"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary'); }, 2000);
             }, (err) => {
                 console.error('Clipboard API writeText error for #copyFilePreviewUrl:', err);
                 tryCopyExecCommand(textToCopy, "#copyFilePreviewUrl");
@@ -532,7 +511,5 @@ if ($('#fileManagerMainGallery').length) { // Only run if on File Manager Page
     });
 } // End File Manager Page Specific JS
 
-// Note: escapeHtml was defined inside the FM specific block, it should be fine there or global.
-// For this refactor, I'll ensure it's accessible if needed by handleFileSelectionFromManager, or define it globally if it's not.
-// The subtask prompt does not ask to move escapeHtml, so it will remain within the FM specific block.
+// Note: escapeHtml was defined inside the FM specific block.
 // The handleFileSelectionFromManager does not use escapeHtml.
